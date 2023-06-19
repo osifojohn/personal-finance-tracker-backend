@@ -55,17 +55,6 @@ public class AuthenticationService {
                 .build();
     }
 
-    private void savedUserToken(User user, String jwtToken) {
-        var token = Token.builder()
-                .user(user)
-                .token(jwtToken)
-                .tokenType(TokenType.BEARER)
-                .revoked(false)
-                .expired(false)
-                .build();
-        tokenRepository.save(token);
-    }
-
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws BadCredentialsException{
         var user = repository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Wrong email or password"));
@@ -77,9 +66,31 @@ public class AuthenticationService {
                 )
         );
         var jwtToken = jwtService.generateToken(user);
+        revokeAllUserTokens(user);
         savedUserToken(user,jwtToken);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
+    }
+    private void savedUserToken(User user, String jwtToken) {
+        var token = Token.builder()
+                .user(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
+    }
+
+    private void revokeAllUserTokens(User user){
+     var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+     if (validUserTokens.isEmpty())
+      return;
+     validUserTokens.forEach(t->{
+         t.setExpired(true);
+         t.setRevoked(true);
+     });
+     tokenRepository.saveAll(validUserTokens);
     }
 }
