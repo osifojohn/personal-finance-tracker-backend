@@ -1,5 +1,6 @@
-package com.osifojohncode.financetracker.entity.user;
+package com.osifojohncode.financetracker.repository;
 
+import com.osifojohncode.financetracker.entity.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

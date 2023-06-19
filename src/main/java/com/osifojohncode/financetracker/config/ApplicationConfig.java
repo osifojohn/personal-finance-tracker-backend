@@ -1,6 +1,6 @@
 package com.osifojohncode.financetracker.config;
 
-import com.osifojohncode.financetracker.entity.user.UserRepository;
+import com.osifojohncode.financetracker.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

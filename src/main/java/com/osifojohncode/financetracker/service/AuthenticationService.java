@@ -4,9 +4,12 @@ import com.osifojohncode.financetracker.config.JwtService;
 import com.osifojohncode.financetracker.dto.AuthenticationRequest;
 import com.osifojohncode.financetracker.dto.AuthenticationResponse;
 import com.osifojohncode.financetracker.dto.RegisterRequest;
+import com.osifojohncode.financetracker.entity.token.Token;
+import com.osifojohncode.financetracker.entity.token.TokenType;
 import com.osifojohncode.financetracker.entity.user.Role;
 import com.osifojohncode.financetracker.entity.user.User;
-import com.osifojohncode.financetracker.entity.user.UserRepository;
+import com.osifojohncode.financetracker.repository.TokenRepository;
+import com.osifojohncode.financetracker.repository.UserRepository;
 import com.osifojohncode.financetracker.error.BadCredentialsException;
 import com.osifojohncode.financetracker.error.UserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +21,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
+
  private  final PasswordEncoder passwordEncoder;
  private final UserRepository repository;
+ private final TokenRepository tokenRepository;
 
  private final JwtService jwtService;
  private final AuthenticationManager authenticationManager;
@@ -39,11 +44,26 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .build();
-        repository.save(user);
+       var savedUser = repository.save(user);
+
         var jwtToken = jwtService.generateToken(user);
+
+        savedUserToken(savedUser, jwtToken);
+
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
+    }
+
+    private void savedUserToken(User user, String jwtToken) {
+        var token = Token.builder()
+                .user(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) throws BadCredentialsException{
@@ -57,6 +77,7 @@ public class AuthenticationService {
                 )
         );
         var jwtToken = jwtService.generateToken(user);
+        savedUserToken(user,jwtToken);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
